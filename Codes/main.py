@@ -21,7 +21,7 @@ def main():
 
     user_input = dio.read_xml('../Data/test.xml')
 
-    t = pd.read_parquet('../Data/xp_continuous_test.parquet')
+    t = pd.read_csv('../Data/xp_continuous_test.csv')
     t = st.process_data(t)
 
     #output_file_names

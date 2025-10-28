@@ -13,7 +13,7 @@
 import numpy as np
 import ast
 from scipy.interpolate import CubicSpline
-import math_tools, line_analysis
+import math_tools, line_analysis, download_xp_spectra
 
 class XPConstants(object):
     """
@@ -465,3 +465,103 @@ def process_data(data_table):
     except:
         print("Data already processed")
     return data_table
+
+
+def req_cols_in_table(data_table, required_columns = ['source_id', 'bp_coefficients', 'rp_coefficients',
+                                              'bp_coefficient_errors', 'rp_coefficient_errors',
+                                              'bp_coefficient_correlations', 'rp_coefficient_correlations']):
+    
+    """
+    Validate that a table-like object contains the required column names.
+
+    Parameters
+    ----------
+    data_table : object
+        Table-like object that exposes a .columns attribute (for example, a pandas.DataFrame).
+    required_columns : list of str, optional
+        Iterable of column names to check for. Defaults to
+        ['source_id', 'bp_coefficients', 'rp_coefficients',
+            'bp_coefficient_correlations', 'rp_coefficient_correlations'].
+
+    Returns
+    -------
+    bool
+        True if all required column names are present in data_table.columns, False otherwise.
+
+    Side effects
+    ------------
+    If any required columns are missing, their names are printed to standard output.
+
+    Notes
+    -----
+    - The function performs simple membership checks against data_table.columns and does not modify
+        the input object.
+    - data_table.columns should be an iterable of strings (e.g., pandas.Index).
+    """
+
+    missing_columns = [col for col in required_columns if col not in data_table.columns]
+    if missing_columns:
+        print(f"Missing columns in data table: {missing_columns}")
+        return False
+    return True
+
+
+def download_xp_spectra_if_needed(source_id_table, data_release='Gaia DR3',
+                        source_id_column='source_id',
+                        gaia_class=None,
+                        retrieval_type='XP_CONTINUOUS',
+                        format_type='csv',
+                        data_structure='RAW', output_file = '../Data/xp_continuous_downloaded.csv'):
+    """
+    Download and prepare XP spectra for a set of Gaia source IDs if needed.
+    This function checks whether the provided source_id_table already contains the
+    required columns for XP spectra retrieval (via req_cols_in_table). If the table
+    does not contain the required columns, it will request XP spectra using the
+    download_xp_spectra.download_xp_spectra helper, save the raw download to
+    output_file (when applicable), and then run the result through process_data.
+    If the required columns are present, the function will operate on a copy of
+    the provided table and call process_data before returning.
+    Parameters
+    ----------
+    source_id_table : table-like
+        A table-like object (for example a pandas.DataFrame) that contains Gaia
+        source identifiers. The function will inspect this table to decide whether
+        a download is necessary.
+    data_release : str, optional
+        Gaia data release to use for retrieval (default: 'Gaia DR3').
+    source_id_column : str, optional
+        Name of the column in source_id_table that contains the Gaia source IDs
+        (default: 'source_id').
+    gaia_class : str or None, optional
+        Optional Gaia object class filter to pass through to the downloader
+        (default: None).
+    retrieval_type : str, optional
+        The retrieval type argument passed to the downloader (default:
+        'XP_CONTINUOUS').
+    format_type : str, optional
+        The file/format type requested from the downloader (default: 'csv').
+    data_structure : str, optional
+        The data structure argument passed to the downloader (default: 'RAW').
+    output_file : str, optional
+        Filepath where downloaded data will be saved when a download occurs
+        (default: '../Data/xp_continuous_downloaded.csv').
+    Returns
+    -------
+    pandas.DataFrame
+        A processed copy of the datalink table. If a download was necessary, this
+        will be the processed result of the downloaded data; otherwise it will be
+        the processed copy of the original source_id_table.
+    """
+    if not req_cols_in_table(source_id_table):
+        print("Downloading XP spectra and saving to file " + output_file)
+        datalink = download_xp_spectra.download_xp_spectra(source_id_table, data_release=data_release,
+                             source_id_column=source_id_column,
+                             gaia_class=gaia_class,
+                             retrieval_type=retrieval_type,
+                             format_type=format_type,
+                             data_structure=data_structure,
+                             output_file=output_file)
+    else:
+        datalink = source_id_table.copy()
+    datalink = process_data(datalink)
+    return datalink
