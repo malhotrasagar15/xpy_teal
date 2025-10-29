@@ -1,6 +1,5 @@
 # test_codes
-Codes/main_MareNostrum.py
-Data/XP_CONTINUOUS_COMBINED.csv
+src/xpy_teal/Codes/main_MareNostrum.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

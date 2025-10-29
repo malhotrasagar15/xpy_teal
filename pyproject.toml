@@ -1,0 +1,25 @@
+[project]
+name = "xpy_teal"
+version = "0.1.0"
+description = "XP Tool for Emission and Absorption Lines. Toolkit for Gaia XP spectra and line analysis."
+readme = "README.md"
+license = { file = "LICENSE" }
+authors = [
+    { name = "sagarmalhotra", email = "malhotrasagar15@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "astropy>=7.1.1",
+    "astroquery>=0.4.11",
+    "joblib>=1.5.2",
+    "numpy>=2.3.4",
+    "pandas>=2.3.3",
+    "scipy>=1.16.3",
+]
+
+[project.scripts]
+xpy-teal = "xpy_teal.Codes.main:main"
+
+[build-system]
+requires = ["uv_build>=0.8.17,<0.9.0"]
+build-backend = "uv_build"
