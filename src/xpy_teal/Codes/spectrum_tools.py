@@ -13,8 +13,8 @@
 import numpy as np
 import ast
 from scipy.interpolate import CubicSpline
+from .config import _CONFIG
 from . import math_tools, line_analysis, download_xp_spectra
-from .config import DATA_DIR, CONFIG_DIR
 from scipy.special import factorial
 
 class XPConstants(object):
@@ -36,7 +36,7 @@ class XPConstants(object):
         # Define Path to Configuration Data
         #############################################
 
-        config_path = CONFIG_DIR 
+        config_path = _CONFIG['CONFIG_DIR']
 
         ### First the things that do not change:
         
@@ -555,14 +555,13 @@ def download_xp_spectra_if_needed(source_id_table, data_release='Gaia DR3',
         the processed copy of the original source_id_table.
     """
     if not req_cols_in_table(source_id_table):
-        print("Downloading XP spectra and saving to file " + str(DATA_DIR / output_file))
         datalink = download_xp_spectra.download_xp_spectra(source_id_table, data_release=data_release,
                              source_id_column=source_id_column,
                              gaia_class=gaia_class,
                              retrieval_type=retrieval_type,
                              format_type=format_type,
                              data_structure=data_structure,
-                             output_file=DATA_DIR / output_file)
+                             output_file=output_file)
     else:
         datalink = source_id_table.copy()
     datalink = process_data(datalink)

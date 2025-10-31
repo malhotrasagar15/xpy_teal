@@ -7,7 +7,7 @@ from . import spectrum_tools as st
 from . import dataIO as dio
 import numpy as np
 import pickle
-from .config import DATA_DIR, CONFIG_DIR
+from .config import _CONFIG
 import os
 
 def run_pipeline(sources_table,
@@ -16,80 +16,109 @@ def run_pipeline(sources_table,
                 eq_widths_output_file='Test_EqWidths',
                 extrema_output_file='Test_Extrema',
                 time_stamps=False,
-                produce_eq_widths=True,
-                config_file='test.xml'):
-
+                produce_eq_widths=True):
     """
-    Run the XPy-TEAL pipeline to locate spectral lines and (optionally) compute equivalent widths.
-    This function orchestrates the end-to-end processing of a list/table of sources:
-    - Reads pipeline configuration from an XML file.
-    - Ensures XP spectra are downloaded (or reads existing cached output).
-    - Builds wavelength/line lists from configured default and user-specified lines.
-    - Locates candidate spectral lines (derivative-based search) in parallel.
-    - Optionally saves all found extrema to a pickle file.
-    - Optionally computes equivalent widths for the requested wavelengths and lines,
-        produces a pandas DataFrame of results, and can write that DataFrame to disk
-        in CSV format (other formats may be added).
+    Run the XPy-TEAL analysis pipeline for a set of sources.
+    This function orchestrates the end-to-end processing of XP spectra: it reads user
+    configuration, downloads or loads continuous XP spectra for the provided sources,
+    detects spectral features (extrema) in derivative space, optionally computes
+    equivalent widths for a set of spectral lines, and writes selected outputs to
+    disk.
     Parameters
     ----------
-    sources_table : object
-            Source specification to feed to the downloader. This may be a path, a table-like
-            object, or any input accepted by st.download_xp_spectra_if_needed that identifies
-            which sources to download/analyze.
+    sources_table : str or pandas.DataFrame or path-like
+        Identifier for the input source list. This is forwarded to the
+        st.download_xp_spectra_if_needed(...) helper which will either download,
+        read or otherwise prepare the continuous XP spectra database for the
+        listed sources. The exact accepted types/semantics depend on that helper.
     source_id_column : str, optional
-            Column name in sources_table used as the unique source identifier (default: 'source_id').
+        Name of the column in sources_table that uniquely identifies each source.
+        Default: 'source_id'.
     xp_continuous_output_file : str, optional
-            Path (including filename) for the local cached spectra file used by the downloader
-            (default: DATA_DIR/'xp_continuous_downloaded.csv').
+        Base filename (without directory) used by st.download_xp_spectra_if_needed
+        when saving or reading the continuous XP spectra. Default: 'xp_continuous_downloaded.csv'.
     eq_widths_output_file : str, optional
-            Base filename (without extension) used when saving equivalent-width results
-            to disk under the DATA_DIR (default: DATA_DIR/'Test_EqWidths').
+        Base filename (without directory/extension) used when saving equivalent-width
+        outputs. Default: 'Test_EqWidths'.
     extrema_output_file : str, optional
-            Base filename (without extension) used when saving extrema information as a pickle
-            under the DATA_DIR (default: DATA_DIR/'Test_Extrema').
+        Base filename (without directory/extension) used when saving extrema
+        information as a pickle. Default: 'Test_Extrema'.
     time_stamps : bool, optional
-            If True, print timing information for major pipeline stages to stdout (default: False).
+        When True, print elapsed timing information for major pipeline stages.
+        Default: False.
     produce_eq_widths : bool, optional
-            If True, run the equivalent-width calculation step; if False, skip it and return None
-            for RESULT (default: True).
-    config_file : str, optional
-            Path to the pipeline XML configuration file used to set runtime options such as
-            number of cores, output format, and which lines to analyze (default: DATA_DIR/'test.xml').
-    Returns
-    -------
-    pandas.DataFrame or None
-            If produce_eq_widths is True, returns a pandas.DataFrame containing equivalent-width
-            measurements (and related metadata) for the requested lines and sources. If
-            produce_eq_widths is False, returns None.
-    Side effects
+        When True, perform equivalent-width calculations after extrema detection.
+        When False, equivalent-width steps are skipped and the function returns None.
+        Default: True.
+    Behavior / Side effects
+    -----------------------
+    - Reads runtime/user configuration via dio.read_xml() to obtain:
+        - output_format (e.g., 'csv')
+        - provide_all_extrema (bool)
+        - provide_equivalent_widths (bool)
+        - number_of_cores (int)
+        - list_of_default_lines, list_of_line_wavelengths (line selection)
+    - Downloads or loads XP spectra for the provided sources via
+        st.download_xp_spectra_if_needed(...). This may read or write the file named
+        by xp_continuous_output_file.
+    - Builds a list of line wavelengths/names by combining default and user-requested lines.
+    - Detects lines/extrema in derivative space in parallel using
+        la.getLinesInDeriv_parallel(...). The number of parallel workers is taken
+        from the user configuration.
+    - If provide_all_extrema (from user XML) is True, saves the complete extrema
+        information (LINE_DICT) to a pickle file under _CONFIG["DATA_DIR"] using the
+        given extrema_output_file base name ('.pkl' extension).
+    - If produce_eq_widths is True, computes equivalent widths across the chosen
+        wavelengths using la.analyseLine_all_wavelengths(...), converts results to a
+        pandas DataFrame via la.make_output_dataframe(...) and, if configured
+        (provide_equivalent_widths flag in user XML), writes the results to disk in
+        the requested output_format (currently 'csv' is supported in the pipeline).
+    - Deletes intermediate LINE_DICT to free memory before returning.
+    Return value
     ------------
-    - Reads configuration via dio.read_xml(config_file).
-    - Downloads or reads XP spectra, using st.download_xp_spectra_if_needed and writes the
-        downloaded cache to xp_continuous_output_file as needed.
-    - Writes extrema data to DATA_DIR/<extrema_output_file>.pkl if enabled in the config.
-    - Writes equivalent-width results to DATA_DIR/<eq_widths_output_file>.<ext> when the
-        configuration requests it; currently CSV output is supported.
-    - Prints progress and timing information to stdout when time_stamps is True.
-    - Uses parallel computation for line-finding (n_cores from configuration).
-    - Deletes the internal LINE_DICT before returning.
-    Notes
-    -----
-    - The function relies on external modules/functions (dio, st, la, numpy, pickle) to
-        perform the actual IO, line detection and analysis; exceptions raised by those
-        routines propagate to the caller.
-    - The XML configuration determines flags such as 'output_format', 'provide_all_extrema',
-        'provide_equivalent_widths', and 'number_of_cores'. Only CSV output is currently
-        implemented for saving equivalent-width results in this function.
-    - File paths printed in messages are relative to the working directory; ensure the
-        DATA_DIR exists and is writable.
+    pandas.DataFrame or None
+        If equivalent-width computation was performed and requested for output,
+        returns a pandas DataFrame (RESULT) containing the computed equivalent
+        widths and related columns. If equivalent-width computation was skipped
+        (produce_eq_widths=False) the function returns None.
+    Files written
+    -------------
+    - When provide_all_extrema is True: DATA_DIR/<extrema_output_file>.pkl (pickle of LINE_DICT)
+    - When provide_equivalent_widths is True and output_format == 'csv':
+        DATA_DIR/<eq_widths_output_file>.csv
+    Note: DATA_DIR is taken from the global _CONFIG["DATA_DIR"] used by the package.
+    Notes and assumptions
+    ---------------------
+    - The function relies on several module-level helpers and globals (dio, st, la,
+        _CONFIG) and therefore will raise whatever exceptions those helpers raise
+        (network/IO errors, parsing errors, pandas/numPy exceptions, pickle errors, etc.).
+    - The deconvolution order K is fixed to 2 within the pipeline.
+    - Parallel processing is delegated to la.getLinesInDeriv_parallel and
+        la.analyseLine_all_wavelengths and controlled by the number_of_cores value in
+        the user XML.
+    - The function prints progress messages; use time_stamps=True for additional timing diagnostics.
+    Example
+    -------
+    # Basic usage (assuming package imports and a valid sources_table):
+    result_df = run_pipeline(sources_table,
+                            xp_continuous_output_file='xp_cont.csv',
+                            eq_widths_output_file='eqw_results',
+                            extrema_output_file='all_extrema',
+                            time_stamps=True,
+                            produce_eq_widths=True)
+    Raises
+    ------
+    Any exception raised by underlying helpers (dio.read_xml, st.download_xp_spectra_if_needed,
+    la.* functions, file I/O, pickle) will propagate to the caller.
     """
-
 
     if time_stamps:
         print("Starting XPy-TEAL pipeline...")
+        print("------------------------------------")
+        print("------------------------------------")
         t1 = time.time()
 
-    user_input = dio.read_xml(DATA_DIR/config_file)
+    user_input = dio.read_xml()
 
     t = st.download_xp_spectra_if_needed(sources_table,
                                         source_id_column=source_id_column,
@@ -128,7 +157,7 @@ def run_pipeline(sources_table,
         print("Time to get lines in derivative: ", t3-t2)
 
     if provide_all_extrema_flag:
-        extrema_path = os.path.join(DATA_DIR, extrema_output_file + '.pkl')
+        extrema_path = os.path.join(_CONFIG["DATA_DIR"], extrema_output_file + '.pkl')
         print("Saving all extrema information to file " + extrema_path)
         with open(extrema_path, 'wb') as f:
             pickle.dump(LINE_DICT, f)
@@ -146,11 +175,13 @@ def run_pipeline(sources_table,
             print("Time to get equivalent widths: ", t4-t3)
 
         if provide_eq_widths_flag:
-            out_path = os.path.join(DATA_DIR, eq_widths_output_file + "." + output_format)
+            out_path = os.path.join(_CONFIG["DATA_DIR"], eq_widths_output_file + "." + output_format)
             print("Saving equivalent widths to file " + out_path)
+            print("------------------------------------")
+            print("------------------------------------")
             if output_format == 'csv':
-                RESULT.to_csv(os.path.join(DATA_DIR, eq_widths_output_file + '.csv'), index=False)
-            
+                RESULT.to_csv(os.path.join(_CONFIG["DATA_DIR"], eq_widths_output_file + '.csv'), index=False)
+
             # it will be the fastest to write to parquet
             # elif output_format == 'parquet':
             #     RESULT.to_parquet(os.path.join(DATA_DIR, eq_widths_output_file + '.parquet'), index=False)
@@ -158,8 +189,11 @@ def run_pipeline(sources_table,
 
     else:
         print("Skipping equivalent width calculations as per user request.")
+        print("------------------------------------")
+        print("------------------------------------")
         RESULT = None
 
     del LINE_DICT
 
+    print("Pipeline completed.")
     return RESULT

@@ -2,7 +2,7 @@ from astroquery.gaia import Gaia
 import pandas as pd
 import numpy as np
 import getpass
-from .config import DATA_DIR
+from .config import _CONFIG
 
 def download_xp_spectra(source_id_table, data_release='Gaia DR3',
                         source_id_column='source_id',
@@ -79,6 +79,8 @@ def download_xp_spectra(source_id_table, data_release='Gaia DR3',
   >>> # Using a pandas DataFrame `df` with a 'source_id' column:
   >>> dl = download_xp_spectra(df, data_release='Gaia DR3', output_file='datalink.csv')
   """
+
+  print("Downloading XP spectra and saving to file " + str(_CONFIG["DATA_DIR"] / output_file))
   if gaia_class is None:
     gaia_class = Gaia
     if len(source_id_table) >= 2000:
@@ -105,8 +107,8 @@ def download_xp_spectra(source_id_table, data_release='Gaia DR3',
 
   if output_file is not None:
     if format_type == 'csv':
-      datalink.to_csv(output_file, index=False)
+      datalink.to_csv(_CONFIG["DATA_DIR"] / output_file, index=False)
     elif format_type == 'parquet':
-      datalink.to_parquet(output_file, index=False)
+      datalink.to_parquet(_CONFIG["DATA_DIR"] / output_file, index=False)
   return datalink
 

@@ -1,25 +1,29 @@
 [project]
-name = "xpy_teal"
-version = "0.1.0"
-description = "XP Tool for Emission and Absorption Lines. Toolkit for Gaia XP spectra and line analysis."
+name = "xpy-teal"
+version = "1.0.1"
+description = "XPy-Teal: XP Tool for Emission and Absorption Lines"
 readme = "README.md"
 license = { file = "LICENSE" }
 authors = [
-    { name = "sagarmalhotra", email = "malhotrasagar15@gmail.com" }
+    { name = "Sagar Malhotra", email = "malhotrasagar15@gmail.com" },
+    { name = "Michael Weiler", email = "mweiler@fqa.ub.edu" }
 ]
-requires-python = ">=3.12"
+requires-python = ">=3.10"
 dependencies = [
-    "astropy>=7.1.1",
     "astroquery>=0.4.11",
+    "ipykernel>=7.1.0",
     "joblib>=1.5.2",
-    "numpy>=2.3.4",
+    "numpy>=2.2.6",
     "pandas>=2.3.3",
-    "scipy>=1.16.3",
+    "scipy>=1.15.3",
 ]
-
-[project.scripts]
-xpy-teal = "xpy_teal.Codes.main:main"
 
 [build-system]
-requires = ["uv_build>=0.8.17,<0.9.0"]
-build-backend = "uv_build"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[[tool.uv.index]]
+name = "testpypi"
+url = "https://test.pypi.org/simple/"
+publish-url = "https://test.pypi.org/legacy/"
+explicit = true
