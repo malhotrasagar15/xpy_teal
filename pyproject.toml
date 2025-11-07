@@ -1,6 +1,6 @@
 [project]
 name = "xpy-teal"
-version = "1.0.1"
+version = "1.1.0"
 description = "XPy-Teal: XP Tool for Emission and Absorption Lines"
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -27,3 +27,8 @@ name = "testpypi"
 url = "https://test.pypi.org/simple/"
 publish-url = "https://test.pypi.org/legacy/"
 explicit = true
+
+[project.urls]
+"Homepage" = "https://github.com/malhotrasagar15/xpy_teal"
+"Bug Tracker" = "https://github.com/malhotrasagar15/xpy_teal/issues"
+"Source" = "https://github.com/malhotrasagar15/xpy_teal"

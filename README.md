@@ -1,3 +1,4 @@
+[![PyPI version](https://img.shields.io/pypi/v/xpy-teal.svg)](https://pypi.org/project/xpy-teal/)
 # 🌌 XPy-Teal: XP Tool for Emission and Absorption Lines
 
 XPy-Teal is a Python version of the tool developed by [M. Weiler et al. 2023](https://arxiv.org/abs/2211.06946) for the analysis of Gaia DR3 XP spectra.
