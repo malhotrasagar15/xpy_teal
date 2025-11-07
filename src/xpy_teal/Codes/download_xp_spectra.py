@@ -94,21 +94,53 @@ def download_xp_spectra(source_id_table, data_release='Gaia DR3',
 
   gaia_class.ROW_LIMIT = -1
 
-  datalink = Gaia.load_data(ids=source_id_table[source_id_column].tolist(),
+  # The maximum limit for a single query is 5000 source_ids
+  # So we need to split the source_id_table into chunks of 5000
+
+  if len(source_id_table) > 5000:
+    print(f'The number of source_ids is {len(source_id_table)}, which exceeds the maximum limit of 5000 per query.')
+    print('Splitting the source_id_table into chunks of 5000...')
+    datalink_list = []
+    for i in range(0, len(source_id_table), 5000):
+      chunk = source_id_table.iloc[i:i+5000]
+      print(f'Processing chunk {i//5000 + 1} with {len(chunk)} source_ids...')
+      datalink_chunk = gaia_class.load_data(ids=chunk[source_id_column].tolist(),
           data_release=data_release,
                       retrieval_type=retrieval_type,
             data_structure=data_structure,
             format='csv',
             verbose=False
-  )
-  # get the first key of the datalink dictionary
-  datalink = datalink[list(datalink.keys())[0]][0]
-  datalink = datalink.to_pandas()
+      )
+      datalink_chunk = datalink_chunk[list(datalink_chunk.keys())[0]][0]
+      datalink_chunk = datalink_chunk.to_pandas()
+      datalink_list.append(datalink_chunk)
+    datalink = pd.concat(datalink_list, ignore_index=True)
 
-  if output_file is not None:
-    if format_type == 'csv':
-      datalink.to_csv(_CONFIG["DATA_DIR"] / output_file, index=False)
-    elif format_type == 'parquet':
-      datalink.to_parquet(_CONFIG["DATA_DIR"] / output_file, index=False)
+    print(str(len(datalink)) + " stars have XP spectra available from the input list of " + str(len(source_id_table)) + " stars.")
+
+    if output_file is not None:
+      if format_type == 'csv':
+        datalink.to_csv(output_file, index=False)
+      elif format_type == 'parquet':
+        datalink.to_parquet(output_file, index=False)
+    return datalink
+  
+  else:
+    datalink = Gaia.load_data(ids=source_id_table[source_id_column].tolist(),
+            data_release=data_release,
+                        retrieval_type=retrieval_type,
+              data_structure=data_structure,
+              format='csv',
+              verbose=False
+    )
+    # get the first key of the datalink dictionary
+    datalink = datalink[list(datalink.keys())[0]][0]
+    datalink = datalink.to_pandas()
+
+    if output_file is not None:
+      if format_type == 'csv':
+        datalink.to_csv(output_file, index=False)
+      elif format_type == 'parquet':
+        datalink.to_parquet(output_file, index=False)
   return datalink
 
