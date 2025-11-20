@@ -81,6 +81,7 @@ def download_xp_spectra(source_id_table, data_release='Gaia DR3',
   """
 
   print("Downloading XP spectra and saving to file " + str(_CONFIG["DATA_DIR"] / output_file))
+  output_file = _CONFIG["DATA_DIR"] / output_file if output_file is not None else None
   if gaia_class is None:
     gaia_class = Gaia
     if len(source_id_table) >= 2000:
