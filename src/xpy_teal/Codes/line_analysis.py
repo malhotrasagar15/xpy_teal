@@ -570,6 +570,10 @@ def get_default_line_wavelengths(list_of_default_lines):
         list: A list of wavelengths corresponding to the given default lines. If a line name does not match, None is assigned.
 
     """
+
+    # list of default lines can be empty
+    if list_of_default_lines is None:
+        list_of_default_lines = ""
     lines = list_of_default_lines.split(",")
     
     if lines[0] != "":
@@ -631,10 +635,15 @@ def getLineNames(default_lines, other_lines):
     list: A list of line names, including the default lines and 
     the rounded other lines until unique names are obtained.
     """
+
+    if default_lines is None:
+        default_lines = ""
     default_lines = default_lines.split(',')
 
+    if other_lines is None:
+        other_lines = ""
     other_lines = other_lines.split(',')
-    other_lines = [float(i) for i in other_lines]
+    other_lines = [float(i) for i in other_lines if i != '']
 
     temp_line_names = [round(i) for i in other_lines]
 
@@ -644,8 +653,11 @@ def getLineNames(default_lines, other_lines):
         rounding_decimal_places += 1
     
     temp_line_names = ['Line_' + str(i)  + 'nm' for i in temp_line_names]
-    temp_line_names = default_lines + temp_line_names
 
+    # default_lines can be empty
+    default_lines = [line for line in default_lines if line != '']
+    if default_lines:
+        temp_line_names = default_lines + temp_line_names
     return temp_line_names
 
 def getDispShift(wavelength, tol = 10**-4):
