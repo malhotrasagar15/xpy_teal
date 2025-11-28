@@ -8,53 +8,28 @@ It includes tools for XP data retrieval via the Gaia Archive, data calibration, 
 ⚠️ Note: The current version only supports the **Narrow Line Approximation** for equivalent width measurements. See the [original paper](https://arxiv.org/abs/2211.06946) for more details.
 ---
 
-## 📁 Repository Structure
+## Column Description
 
-```
-/
-├── src
-│   └── xpy_teal
-│       ├── Codes
-│       │   ├── __init__.py
-│       │   ├── config.py
-│       │   ├── dataIO.py
-│       │   ├── download_xp_spectra.py
-│       │   ├── line_analysis.py
-│       │   ├── main_MareNostrum.py
-│       │   ├── math_tools.py
-│       │   ├── spectrum_tools.py
-│       │   └── xpy_teal_pipeline.py
-│       ├── Configuration_Data
-│       │   ├── BasisTransformationMatrix_BP.csv
-│       │   ├── BasisTransformationMatrix_RP.csv
-│       │   ├── DerivativeMatrix_D1.csv
-│       │   ├── DerivativeMatrix_D2.csv
-│       │   ├── DerivativeMatrix_D3.csv
-│       │   ├── DerivativeMatrix_D4.csv
-│       │   ├── HermiteIntegrals.csv
-│       │   ├── LSFModel_BP.csv
-│       │   ├── LSFModel_RP.csv
-│       │   ├── RootMatrix_H.csv
-│       │   ├── bpC03_v375wi_dispersion.csv
-│       │   ├── bpC03_v375wi_response.csv
-│       │   ├── rpC03_v142r_dispersion.csv
-│       │   └── rpC03_v142r_response.csv
-│       └── __init__.py
-├── examples
-│   ├── XPy_TEAL_Results
-│   │   ├── Test_EqWidths.csv
-│   │   ├── Test_Extrema.pkl
-│   │   └── xp_continuous_downloaded.csv
-│   ├── XPy_TEAL_config.xml
-│   ├── source_ids.csv
-│   └── tutorial.ipynb
-├── LICENSE
-├── README.md
-├── pyproject.toml
-└── uv.lock
+### Hα line output columns
 
+- `Halpha_W`  
+  Equivalent width of the Hα line (nm). Note the sign convention: positive = emission, negative = absorption.
 
-```
+- `Halpha_Werror`  
+  Uncertainty on the equivalent width (nm).
+
+- `Halpha_p`  
+  Significance of the detected extremum associated with the Hα line.
+
+- `Halpha_D`  
+  Line-width parameter (see Eq. 89 in [Weiler et al. 2023](https://arxiv.org/abs/2211.06946)). Values ≫ 1 indicate a broad line.
+
+- `Halpha_order`  
+  Derivative order of the detected extremum (0 or 2). If no extremum is detected, this field is set to `uL` and an upper limit on the equivalent width is provided instead.
+
+Notes
+- Units are in nanometres (nm) unless otherwise stated.
+- The same column naming convention is used for other requested lines.
 
 ---
 

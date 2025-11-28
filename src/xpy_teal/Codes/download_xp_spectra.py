@@ -127,7 +127,7 @@ def download_xp_spectra(source_id_table, data_release='Gaia DR3',
     return datalink
   
   else:
-    datalink = Gaia.load_data(ids=source_id_table[source_id_column].tolist(),
+    datalink = gaia_class.load_data(ids=source_id_table[source_id_column].tolist(),
             data_release=data_release,
                         retrieval_type=retrieval_type,
               data_structure=data_structure,
