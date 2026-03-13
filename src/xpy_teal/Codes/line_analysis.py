@@ -296,7 +296,7 @@ def getLinesInDeriv_parallel(datalink, n_cores=2, batch_size=None):
 
     setup = spectrum_tools.XPConstants()
     if batch_size is None:
-        batch_size = len(datalink)//n_cores
+        batch_size = max(1, len(datalink)//n_cores)
 
     def getLinesInDeriv_single(step, batch_size):
         '''
@@ -799,7 +799,7 @@ def analyseLine_singlelambda(datalink, wavelength, LINE_DICT, setup=None, k=2,
         dispShift = getDispShift(wavelength)
 
     if batch_size is None:
-        batch_size = len(datalink)//ncores
+        batch_size = max(1, len(datalink)//ncores)
 
     uL = spectrum_tools.disp_u_to_lambda(wavelength, instrument=instrument, setup=setup, disp_inverse=True) + dispShift  # nominal position of the line in pseudo-wavelength
 
@@ -916,7 +916,7 @@ def analyseLine_all_wavelengths(datalink, WAVELENGTH_LIST, LINE_NAMES, LINE_DICT
         setup = spectrum_tools.XPConstants()
 
     if batch_size is None:
-        batch_size = len(datalink)//ncores
+        batch_size = max(1, len(datalink)//ncores)
 
 
     RESULT = pd.DataFrame()
